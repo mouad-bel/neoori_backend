@@ -1,0 +1,100 @@
+// Prisma Schema for MySQL/MariaDB Database
+// This file defines the database schema for critical/relational data
+// Compatible with both MySQL and MariaDB (uses mysql provider)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"  // Works with both MySQL and MariaDB
+  url      = env("DATABASE_URL")
+}
+
+// Core User Table - Critical Information Only
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  passwordHash  String?
+  name          String
+  avatar        String?
+  
+  // OAuth
+  googleId      String?  @unique
+  appleId        String?  @unique
+  oauthProvider  String?  // "google", "apple", "email"
+  
+  // Account Status
+  isActive      Boolean  @default(true)
+  emailVerified Boolean  @default(false)
+  emailVerificationToken String?
+  emailVerificationExpires DateTime?
+  
+  // Timestamps
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  lastLoginAt   DateTime?
+  
+  // Relations
+  sessions      Session[]
+  refreshTokens RefreshToken[]
+  passwordResetTokens PasswordResetToken[]
+  
+  // Reference to MongoDB document (optional - for easy lookup)
+  mongoProfileId String? @unique
+  
+  @@index([email])
+  @@index([googleId])
+  @@index([appleId])
+  @@index([mongoProfileId])
+}
+
+// Session Management
+model Session {
+  id           String   @id @default(cuid())
+  userId       String
+  token        String   @unique
+  deviceInfo   String?  // JSON: {platform, os, version}
+  ipAddress    String?
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+  
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([token])
+  @@index([expiresAt])
+}
+
+// Refresh Tokens
+model RefreshToken {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  deviceId  String?  // For mobile: device identifier
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([token])
+  @@index([expiresAt])
+}
+
+// Password Reset Tokens
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  used      Boolean  @default(false)
+  
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([token])
+  @@index([expiresAt])
+}
+
