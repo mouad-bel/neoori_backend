@@ -53,8 +53,8 @@ model User {
 model Session {
   id           String   @id @default(cuid())
   userId       String
-  token        String   @unique
-  deviceInfo   String?  // JSON: {platform, os, version}
+  token        String   @unique @db.VarChar(1000) // JWT tokens can be 200-500+ characters
+  deviceInfo   String?  @db.Text // JSON: {platform, os, version}
   ipAddress    String?
   expiresAt    DateTime
   createdAt    DateTime @default(now())
@@ -62,7 +62,6 @@ model Session {
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   
   @@index([userId])
-  @@index([token])
   @@index([expiresAt])
 }
 
@@ -70,7 +69,7 @@ model Session {
 model RefreshToken {
   id        String   @id @default(cuid())
   userId    String
-  token     String   @unique
+  token     String   @unique @db.VarChar(1000) // JWT tokens can be 200-500+ characters
   deviceId  String?  // For mobile: device identifier
   expiresAt DateTime
   createdAt DateTime @default(now())
@@ -78,7 +77,6 @@ model RefreshToken {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   
   @@index([userId])
-  @@index([token])
   @@index([expiresAt])
 }
 
@@ -86,7 +84,7 @@ model RefreshToken {
 model PasswordResetToken {
   id        String   @id @default(cuid())
   userId    String
-  token     String   @unique
+  token     String   @unique @db.VarChar(1000) // JWT tokens can be 200-500+ characters
   expiresAt DateTime
   createdAt DateTime @default(now())
   used      Boolean  @default(false)
@@ -94,7 +92,6 @@ model PasswordResetToken {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   
   @@index([userId])
-  @@index([token])
   @@index([expiresAt])
 }
 
